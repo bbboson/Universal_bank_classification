@@ -1,0 +1,546 @@
+from IPython.display import display
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import mglearn
+
+import os
+os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
+
+import graphviz
+import warnings
+warnings.filterwarnings(action='ignore')
+
+##########################################################
+
+###1.데이터 수집&확인
+uni=pd.read_excel('C:/UniversalBank.xls',sheet_name="Data",
+                  names=['ID','Age','Experience','Income','ZIP Code','Family','CCAvg','Education','Mortgage',
+                         'Personal_Loan','Securities_Account','CD_Account','Online','Creditcard'],header=None)
+uni=uni.iloc[4:,]
+uni.head() 
+
+##########################################################
+
+uni.dtypes
+
+##########################################################
+
+uni.info()
+
+##########################################################
+
+#ZIPCode제외
+uni=uni.iloc[:,[0,1,2,3,5,6,7,8,9,10,11,12,13]]
+uni
+
+##########################################################
+
+#2.데이터 전처리:Null값과 이상치를 제거해 보세요
+uni.isnull().sum()
+#null값:없음
+
+##########################################################
+
+#plotly 이용한 시각화
+
+import plotly.plotly as py
+from plotly.offline import init_notebook_mode, iplot
+init_notebook_mode(connected=True)
+import plotly.graph_objs as go
+
+import matplotlib.pyplot as plt
+
+# Create trace1 #
+
+trace1 = go.Box(
+                y = uni.Age,
+                name = 'Age',
+                marker = dict(color = 'rgba(255,174,255,0.5)',
+                             line = dict(color='rgb(0,0,0)',width= 1.5)),
+                text = uni.Personal_Loan)
+
+trace2 = go.Box(
+                y = uni.Experience,
+                name = 'Experience',
+                marker = dict(color = 'rgba(12,50,196,0.6)',
+                             line = dict(color='rgb(0,0,0)',width= 1.5)),
+                text = uni.Personal_Loan)
+
+trace3 = go.Box(
+                y = uni.Income,
+                name = 'Income',
+                marker = dict(color = 'rgba(255,50,156,0.4)',
+                             line = dict(color='rgb(0,0,0)',width= 1.5)),
+                text = uni.Personal_Loan)
+
+trace4 = go.Box(
+                y = uni.Family,
+                name = 'Family',
+                marker = dict(color = 'rgba(230,80,196,0.6)',
+                             line = dict(color='rgb(0,0,0)',width= 1.5)),
+                text = uni.Personal_Loan)
+
+trace5 = go.Box(
+                y = uni.CCAvg,
+                name = 'CCAvg',
+                marker = dict(color = 'rgba(110,10,196,0.6)',
+                             line = dict(color='rgb(0,0,0)',width= 1.5)),
+                text = uni.Personal_Loan)
+
+trace6 = go.Box(
+                y = uni.Education,
+                name = 'Education',
+                marker = dict(color = 'rgba(110,10,196,0.6)',
+                             line = dict(color='rgb(0,0,0)',width= 1.5)),
+                text = uni.Personal_Loan)
+
+trace7 = go.Box(
+                y = uni.Mortgage,
+                name = 'Mortgage',
+                marker = dict(color = 'rgba(110,10,196,0.6)',
+                             line = dict(color='rgb(0,0,0)',width= 1.5)),
+                text = uni.Personal_Loan)
+
+trace8 = go.Box(
+                y = uni.Securities_Account,
+                name = 'Securities_Account',
+                marker = dict(color = 'rgba(110,10,196,0.6)',
+                             line = dict(color='rgb(0,0,0)',width= 1.5)),
+                text = uni.Personal_Loan)
+
+trace9 = go.Box(
+                y = uni.CD_Account,
+                name = 'CD_Account',
+                marker = dict(color = 'rgba(110,10,196,0.6)',
+                             line = dict(color='rgb(0,0,0)',width= 1.5)),
+                text = uni.Personal_Loan)
+
+trace10 = go.Box(
+                y = uni.Online,
+                name = 'Online',
+                marker = dict(color = 'rgba(110,10,196,0.6)',
+                             line = dict(color='rgb(0,0,0)',width= 1.5)),
+                text = uni.Personal_Loan)
+
+trace11 = go.Box(
+                y = uni.Creditcard,
+                name = 'Creditcard',
+                marker = dict(color = 'rgba(110,10,196,0.6)',
+                             line = dict(color='rgb(0,0,0)',width= 1.5)),
+                text = uni.Personal_Loan)
+
+data = [trace1,trace2,trace3, trace4,trace5,trace6,trace7,trace8,trace9,trace10,trace11]
+iplot(data)
+
+##########################################################
+
+#이상치 제거
+print("old : {}".format(len(uni))) 
+
+uni=uni[(uni['Income']<=185)]
+uni=uni[(uni['Mortgage']<=252)]
+
+print("new : {}".format(len(uni))) 
+
+##########################################################
+#2.train set,test set 분리
+X=uni.iloc[:,[1,2,3,4,5,6,7,9,10,11,12]]
+y=uni.iloc[:,8]
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42) 
+
+print(X.head())
+print(y.head()) 
+
+##########################################################
+
+print("X_train.shape:{}".format(X_train.shape))
+print("X_test.shape:{}".format(X_test.shape))
+print("y_train.shape:{}".format(y_train.shape))
+print("y_test.shape:{}".format(y_test.shape)) 
+
+##########################################################
+#scaling 4가지 시도
+# scale(x) : 기본 스케일, 평균과 표준편차 사용
+from sklearn.preprocessing import StandardScaler
+
+scaler1 = StandardScaler()
+X_train1=scaler1.fit(X_train)
+X_train1=scaler1.transform(X_train)
+X_test1=scaler1.transform(X_test) 
+
+# robust_scale(x) : 중앙값과 IQR 사용, 아웃라이어의 영향을 최소화
+from sklearn.preprocessing import RobustScaler
+
+scaler2 = RobustScaler()
+X_train2=scaler2.fit(X_train)
+X_train2=scaler2.transform(X_train)
+X_test2=scaler2.transform(X_test)
+
+# minmax_scale(x) : 최대/최소값이 각각 1,0이 되도록 스케일링
+from sklearn.preprocessing import MinMaxScaler
+scaler3=MinMaxScaler()
+X_train3=scaler3.fit(X_train)
+X_train3=scaler3.transform(X_train)
+X_test3=scaler3.transform(X_test)
+
+# maxabs_scale(x) : 최대절대값과 0이 각각 1,0이 되도록 스케일링
+from sklearn.preprocessing import MaxAbsScaler
+scaler4=MaxAbsScaler()
+X_train4=scaler4.fit(X_train)
+X_train4=scaler4.transform(X_train)
+X_test4=scaler4.transform(X_test)
+
+print("X_train1 :\n", X_train1)
+print()
+print("X_train2 :\n", X_train2)
+print()
+print("X_train3 :\n",X_train3) 
+print()
+print("X_train4 :\n",X_train4)
+print()
+print()
+print("X_test1 :\n", X_test1)
+print()
+print("X_test2 :\n", X_test2)
+print()
+print("X_test3 :\n",X_test3) 
+print()
+print("X_test4 :\n",X_test4) 
+
+##########################################################
+y_train = pd.to_numeric(y_train)
+y_train.head()
+
+##########################################################
+#3.분류 모델(kNN, Rogistic Regression, Decision Tree, Random Forest, Gradient Boosting Regression)을 활용
+#최적의 정확도를 구해보세요.(매개변수 조절하는것 잊어 버리시면 안되요)
+
+#3-1.KNN
+training_accuracy1 = []
+
+from sklearn.neighbors import KNeighborsClassifier
+neighbors_settings=range(1,11)
+
+for n_neighbors in neighbors_settings:
+    clf1=KNeighborsClassifier(n_neighbors=n_neighbors)
+    clf1.fit(X_train1,y_train)
+    training_accuracy1.append(clf1.score(X_train1,y_train)) 
+    
+training_accuracy2 = []
+
+from sklearn.neighbors import KNeighborsClassifier
+neighbors_settings=range(1,11)
+
+for n_neighbors in neighbors_settings:
+    clf2=KNeighborsClassifier(n_neighbors=n_neighbors)
+    clf2.fit(X_train2,y_train)
+    training_accuracy2.append(clf2.score(X_train2,y_train)) 
+    
+training_accuracy3 = []
+
+from sklearn.neighbors import KNeighborsClassifier
+neighbors_settings=range(1,11)
+
+for n_neighbors in neighbors_settings:
+    clf3=KNeighborsClassifier(n_neighbors=n_neighbors)
+    clf3.fit(X_train3,y_train)
+    training_accuracy3.append(clf3.score(X_train3,y_train)) 
+    
+training_accuracy4 = []
+
+from sklearn.neighbors import KNeighborsClassifier
+neighbors_settings=range(1,11)
+
+for n_neighbors in neighbors_settings:
+    clf4=KNeighborsClassifier(n_neighbors=n_neighbors)
+    clf4.fit(X_train4,y_train)
+    training_accuracy4.append(clf4.score(X_train4,y_train)) 
+
+##########################################################
+
+y_test = pd.to_numeric(y_test)
+
+test_accuracy1 = []
+
+from sklearn.neighbors import KNeighborsClassifier
+neighbors_settings=range(1,11)
+
+for n_neighbors in neighbors_settings:
+    clf1=KNeighborsClassifier(n_neighbors=n_neighbors)
+    clf1.fit(X_test1,y_test)
+    test_accuracy1.append(clf1.score(X_test1,y_test)) 
+    
+test_accuracy2 = []
+
+from sklearn.neighbors import KNeighborsClassifier
+neighbors_settings=range(1,11)
+
+for n_neighbors in neighbors_settings:
+    clf2=KNeighborsClassifier(n_neighbors=n_neighbors)
+    clf2.fit(X_test2,y_test)
+    test_accuracy2.append(clf2.score(X_test2,y_test)) 
+    
+test_accuracy3 = []
+
+from sklearn.neighbors import KNeighborsClassifier
+neighbors_settings=range(1,11)
+
+for n_neighbors in neighbors_settings:
+    clf3=KNeighborsClassifier(n_neighbors=n_neighbors)
+    clf3.fit(X_test3,y_test)
+    test_accuracy3.append(clf3.score(X_test3,y_test)) 
+    
+test_accuracy4 = []
+
+from sklearn.neighbors import KNeighborsClassifier
+neighbors_settings=range(1,11)
+
+for n_neighbors in neighbors_settings:
+    clf4=KNeighborsClassifier(n_neighbors=n_neighbors)
+    clf4.fit(X_test4,y_test)
+    test_accuracy4.append(clf4.score(X_test4,y_test))
+
+##########################################################
+
+print("training accuracy1 :\n",training_accuracy1)    
+print("training accuracy2 :\n",training_accuracy2)
+print("training accuracy3 :\n",training_accuracy3)  
+print("training accuracy4 :\n",training_accuracy4)  
+
+print("test accuracy1 :\n",test_accuracy1)    
+print("test accuracy2 :\n",test_accuracy2)
+print("test accuracy3 :\n",test_accuracy3)  
+print("test accuracy4 :\n",test_accuracy4)  
+
+##########################################################
+
+a = pd.DataFrame({'training_accuracy1': training_accuracy1,'test_accuracy1':test_accuracy1,
+                  'training_accuracy2': training_accuracy2,'test_accuracy2':test_accuracy2,
+                  'training_accuracy3': training_accuracy3,'test_accuracy3':test_accuracy3,
+                  'training_accuracy4': training_accuracy4,'test_accuracy4':test_accuracy4})
+print(a)
+a.info()
+a.to_csv("C:/universal_acc.csv")
+
+##########################################################
+#3-2.Rogistic Regression
+#scale1
+from sklearn.linear_model import LogisticRegression
+logreg1 = LogisticRegression().fit(X_train1,y_train) #default value of C =1
+logreg100 = LogisticRegression(C=100).fit(X_train1,y_train) #C=100(모델의 제약을 풀어줌)
+logreg001 = LogisticRegression(C=0.01).fit(X_train1,y_train)  #C=0.1(규제의 강도를 높이기 위해 C값을 낮춤)
+
+
+#scale2
+from sklearn.linear_model import LogisticRegression
+logreg1 = LogisticRegression().fit(X_train2,y_train) #default value of C =1
+logreg100 = LogisticRegression(C=100).fit(X_train2,y_train) #C=100(모델의 제약을 풀어줌)
+logreg001 = LogisticRegression(C=0.01).fit(X_train2,y_train)  #C=0.1(규제의 강도를 높이기 위해 C값을 낮춤)
+
+
+#scale3
+from sklearn.linear_model import LogisticRegression
+logreg1 = LogisticRegression().fit(X_train3,y_train) #default value of C =1
+logreg100 = LogisticRegression(C=100).fit(X_train3,y_train) #C=100(모델의 제약을 풀어줌)
+logreg001 = LogisticRegression(C=0.01).fit(X_train3,y_train)  #C=0.1(규제의 강도를 높이기 위해 C값을 낮춤)
+
+
+#scale4
+from sklearn.linear_model import LogisticRegression
+logreg1 = LogisticRegression().fit(X_train4,y_train) #default value of C =1
+logreg100 = LogisticRegression(C=100).fit(X_train4,y_train) #C=100(모델의 제약을 풀어줌)
+logreg001 = LogisticRegression(C=0.01).fit(X_train4,y_train)  #C=0.1(규제의 강도를 높이기 위해 C값을 낮춤)
+
+
+print("train set score1 : {}".format(logreg1.score(X_train1,y_train)))
+print("test set score1 : {}".format(logreg1.score(X_test1,y_test))) 
+print("train set score100 : {}".format(logreg100.score(X_train1,y_train)))
+print("test set score100 : {}".format(logreg100.score(X_test1,y_test))) 
+print("train set score001 : {}".format(logreg001.score(X_train1,y_train)))
+print("test set score001 : {}".format(logreg001.score(X_test1,y_test)))
+print()
+print("train set score12 : {}".format(logreg1.score(X_train2,y_train)))
+print("test set score12 : {}".format(logreg1.score(X_test2,y_test))) 
+print("train set score1002 : {}".format(logreg100.score(X_train2,y_train)))
+print("test set score1002 : {}".format(logreg100.score(X_test2,y_test))) 
+print("train set score0012 : {}".format(logreg001.score(X_train2,y_train)))
+print("test set score0012 : {}".format(logreg001.score(X_test2,y_test))) 
+print()
+print("train set score13 : {}".format(logreg1.score(X_train3,y_train)))
+print("test set score13 : {}".format(logreg1.score(X_test3,y_test))) 
+print("train set score1003 : {}".format(logreg100.score(X_train3,y_train)))
+print("test set score1003 : {}".format(logreg100.score(X_test3,y_test))) 
+print("train set score0013 : {}".format(logreg001.score(X_train3,y_train)))
+print("test set score0013 : {}".format(logreg001.score(X_test3,y_test))) 
+print()
+print("train set score14 : {}".format(logreg1.score(X_train4,y_train)))
+print("test set score14 : {}".format(logreg1.score(X_test4,y_test))) 
+print("train set score1004 : {}".format(logreg100.score(X_train4,y_train)))
+print("test set score1004 : {}".format(logreg100.score(X_test4,y_test))) 
+print("train set score0014 : {}".format(logreg001.score(X_train4,y_train)))
+print("test set score0014 : {}".format(logreg001.score(X_test4,y_test))) 
+
+##########################################################
+
+#3-3.Decision Tree
+from sklearn.tree import DecisionTreeClassifier
+
+#default value of Decision Tree
+tree = DecisionTreeClassifier(random_state=0)
+
+tree.fit(X_train,y_train)
+print("train score1 : {}".format(tree.score(X_train,y_train)))
+print("test score1 : {}".format(tree.score(X_test,y_test)))
+
+#나무의 깊이를 4로 --> 질문을 4개로
+tree2 = DecisionTreeClassifier(max_depth=4, random_state=0)
+
+tree2.fit(X_train,y_train)
+
+print("train score2 : {}".format(tree2.score(X_train,y_train)))
+print("test score2 : {}".format(tree2.score(X_test,y_test)))
+
+# 노드의 최대 개수를 10로 
+tree3 = DecisionTreeClassifier(max_leaf_nodes=10, random_state=0)
+
+tree3.fit(X_train,y_train)
+print("train score3 : {}".format(tree3.score(X_train,y_train)))
+print("test score3 : {}".format(tree3.score(X_test,y_test)))
+
+# 데이터 포인트 최소 개수를 4로 
+tree4 = DecisionTreeClassifier(min_samples_leaf=4, random_state=0)
+tree4.fit(X_train,y_train)
+
+print("train score4 : {}".format(tree4.score(X_train,y_train)))
+print("test score4 : {}".format(tree4.score(X_test,y_test))) 
+
+##########################################################
+
+from sklearn.tree import export_graphviz
+export_graphviz(tree,out_file="tree.dot",class_names=['0','1'],
+                impurity = False, filled = True)
+
+#graphviz #
+
+import graphviz
+
+with open("tree.dot") as f:
+    dot_graph = f.read()
+display(graphviz.Source(dot_graph)) 
+
+##########################################################
+
+# 트리의 특성 중요도(feature importance) #
+# sum(feature importance) = 1 #
+
+print("feature 
+print("feature importance : {}".format(tree.feature_importances_))
+print("feature importance : {}".format(np.sum(tree.feature_importances_ != 0))) 
+
+##########################################################
+
+def plot_feature_importances_uni(tree):
+    n_features = 11
+    plt.barh(np.arange(n_features),tree.feature_importances_, align ='center')
+
+plot_feature_importances_uni(tree) 
+
+##########################################################
+
+tree.feature_importances_
+
+##########################################################
+#4.Random Forest
+from sklearn.ensemble import RandomForestClassifier
+
+forest = RandomForestClassifier(n_estimators = 100, random_state=0)
+forest.fit(X_train,y_train)
+
+print("train accuracy : {}".format(forest.score(X_train,y_train)))
+print("test accuracy : {}".format(forest.score(X_test,y_test)))  
+
+##########################################################
+plot_feature_importances_uni(forest) 
+
+##########################################################
+#5.Gradient Boosting Regression
+from sklearn.ensemble import GradientBoostingClassifier
+
+gbrt = GradientBoostingClassifier(random_state=0)
+gbrt.fit(X_train,y_train)
+
+print("train accuracy : {}".format(gbrt.score(X_train,y_train)))
+print("test accuracy : {}".format(gbrt.score(X_test,y_test))) 
+
+##########################################################
+
+#5-1.트리의 최대 깊이를 줄이기
+gbrt = GradientBoostingClassifier(random_state=0,max_depth=1)
+gbrt.fit(X_train,y_train)
+
+print("train accuracy : {}".format(gbrt.score(X_train,y_train)))
+print("test accuracy : {}".format(gbrt.score(X_test,y_test)))
+
+##########################################################
+
+#5-2.학습률 낮추기
+gbrt = GradientBoostingClassifier(random_state=0,learning_rate=0.01)
+gbrt.fit(X_train,y_train)
+
+print("train accuracy : {}".format(gbrt.score(X_train,y_train)))
+print("test accuracy : {}".format(gbrt.score(X_test,y_test))) 
+
+##########################################################
+
+#5-3.최대 깊이 줄이기&학습률 낮추기
+gbrt = GradientBoostingClassifier(random_state=0,learning_rate=0.01,max_depth=1)
+gbrt.fit(X_train,y_train)
+
+print("train accuracy : {}".format(gbrt.score(X_train,y_train)))
+print("test accuracy : {}".format(gbrt.score(X_test,y_test))) 
+
+##########################################################
+
+plot_feature_importances_uni(gbrt)
+
+##########################################################
+# grid search #
+
+train_accuracy = []
+test_accuracy = []
+
+for learning_rate in np.arange(0.1,0.9,0.01):
+    for max_depth in np.arange(1,5,1):
+        gbrt = GradientBoostingClassifier(random_state=0,learning_rate=learning_rate,max_depth=max_depth)
+        gbrt.fit(X_train,y_train)
+        
+        train_accuracy.append(gbrt.score(X_train,y_train))
+        test_accuracy.append(gbrt.score(X_test,y_test))
+        
+##########################################################
+
+train_accuracy = pd.DataFrame({'index' : np.arange(1,len(train_accuracy)+1,1),'accuracy' : train_accuracy})
+train_accuracy
+        
+##########################################################
+
+test_accuracy = pd.DataFrame({'index' : np.arange(1,len(test_accuracy)+1,1),'accuracy' : test_accuracy})
+test_accuracy
+
+##########################################################
+
+train_accuracy.to_csv("C:/train_acc.csv") 
+test_accuracy.to_csv("C:/test_acc.csv")
+
+
+
+
+
+
+
+
+
+
